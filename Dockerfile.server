@@ -1,0 +1,33 @@
+# Start from a standard Ubuntu LTS image
+FROM ubuntu:20.04
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install SSH server, sudo (for Ansible's 'become' feature), and Python (required by Ansible on the target)
+RUN apt-get update && apt-get install -y openssh-server sudo python3
+
+# Create a user for Ansible to connect with
+# -m creates the home directory
+# -s /bin/bash sets the default shell
+RUN useradd -m -s /bin/bash ansible
+
+# Set a simple password for the 'ansible' user (password: ansible)
+# The 'chpasswd' command reads 'user:password' from standard input
+RUN echo "ansible:ansible" | chpasswd
+
+# Add the 'ansible' user to the sudo group to allow privilege escalation
+RUN adduser ansible sudo
+
+# Configure sudo to not require a password for the 'sudo' group.
+# This allows Ansible's 'become' feature to work seamlessly.
+RUN echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Create the directory for the SSH daemon to run
+RUN mkdir /var/run/sshd
+
+# Expose the SSH port
+EXPOSE 22
+
+# Start the SSH daemon as the main command for the container
+CMD ["/usr/sbin/sshd", "-D"]

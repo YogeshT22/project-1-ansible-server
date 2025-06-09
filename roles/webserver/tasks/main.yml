@@ -1,0 +1,59 @@
+---
+# tasks file for roles/webserver
+- name: 1. Update APT package cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600 # Only update if cache is older than 1 hour
+- name: 2. Install common packages
+  apt:
+    name:
+      - nginx
+      - ufw # Uncomplicated Firewall
+      - htop # A better 'top' for process monitoring
+      - curl
+    state: present
+
+- name: 3. Create a custom index.html page
+  copy:
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head><title>Welcome!</title></head>
+      <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+        <h1>Server Configured by Ansible!</h1>
+        <p>This server was automatically set up by an Ansible playbook.</p>
+        <p>The admin of this server is {{ server_admin_email }}.</p>
+      </body>
+      </html>
+    dest: /var/www/html/index.html
+    owner: www-data
+    group: www-data
+    mode: "0644"
+
+- name: 4. Configure Nginx from template
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: Restart Nginx # This will trigger the 'Restart Nginx' handler if the file changes
+
+- name: 5. Ensure Nginx service is started and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: 6. Configure Firewall (UFW)
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "22" # SSH
+    - "80" # HTTP
+    - "443" # HTTPS
+  notify: Restart UFW
+
+- name: 7. Enable the firewall
+  ufw:
+    state: enabled
+    policy: deny # Deny all incoming traffic by default

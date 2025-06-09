@@ -1,0 +1,6 @@
+---
+- name: Configure Personal Web Server
+  hosts: webservers
+  become: true
+  roles:
+    - webserver

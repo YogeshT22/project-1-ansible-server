@@ -1,0 +1,11 @@
+---
+# handlers file for roles/webserver
+# Handlers are special tasks that only run when 'notified' by another task.
+# This is more efficient than restarting a service on every playbook run.
+- name: Restart Nginx
+  service:
+    name: nginx
+    state: restarted
+
+- name: Restart UFW
+  command: ufw reload

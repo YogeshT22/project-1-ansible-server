@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  personal-server:
+    container_name: ansible-target-server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "2222:22"
+      - "8080:80"
+    # This is the crucial fix: Grant the container permission
+    # to administer the network stack.
+    cap_add:
+      - NET_ADMIN

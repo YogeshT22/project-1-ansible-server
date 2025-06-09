@@ -1,0 +1,15 @@
+# Ansible specific
+*.retry
+*.log
+
+# Python virtual environment
+venv/
+*.pyc
+__pycache__/
+
+# Local environment files
+.env
+
+# System files
+.DS_Store
+Thumbs.db

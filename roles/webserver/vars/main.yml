@@ -1,0 +1,4 @@
+---
+# vars file for roles/webserver
+# We can define variables here for use in the playbook
+server_admin_email: "admin@example.com"
