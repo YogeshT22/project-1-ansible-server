@@ -11,6 +11,7 @@
       - ufw # Uncomplicated Firewall
       - htop # A better 'top' for process monitoring
       - curl
+      - cron
     state: present
 
 - name: 3. Create a custom index.html page
@@ -57,3 +58,10 @@
   ufw:
     state: enabled
     policy: deny # Deny all incoming traffic by default
+- name: 8. Set up daily security updates
+  ansible.builtin.cron:
+    name: "Daily unattended security upgrades"
+    weekday: "*"
+    hour: "2"
+    minute: "0"
+    job: "DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' dist-upgrade"
