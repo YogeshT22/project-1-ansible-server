@@ -8,6 +8,11 @@ A significant part of this project involved debugging real-world challenges, suc
 
 ---
 
+![Ansible](https://img.shields.io/badge/ansible-automation-blue)
+![Docker](https://img.shields.io/badge/docker-provisioning-lightblue)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
+
 ## Core Concepts & Skills Demonstrated
 
 *   **Configuration Management:** Used Ansible, an industry-standard tool, to manage the state of a server from code.
@@ -41,47 +46,74 @@ A significant part of this project involved debugging real-world challenges, suc
 ## How to Run This Project
 
 **Prerequisites:**
-*   A Windows machine with **WSL2** installed and a Linux distribution (e.g., Ubuntu).
-*   Docker Desktop installed on Windows, with the WSL2 integration enabled.
-*   Ansible and `sshpass` installed **inside your WSL environment**:
-    ```bash
-    # Run these commands inside your WSL terminal
-    sudo apt-get update
-    sudo apt-get install -y ansible sshpass
-    ```
+* A Windows machine with **WSL2** installed and a Linux distribution (e.g., Ubuntu).
+* Docker Desktop installed on Windows, with the WSL2 integration enabled.
+* Ansible and `sshpass` installed **inside your WSL environment**:
+
+```bash
+# Run these commands inside your WSL terminal
+sudo apt-get update
+sudo apt-get install -y ansible sshpass
+```
+---
 
 **Step 1: Generate and Prepare SSH Key**
-If you don't have an SSH key in WSL, create one. Then, copy the public key into this project's directory.
+
+_If you don't have an SSH key in WSL, create one. Then, copy the public key into this project's directory._
 
 ```bash
 # 1. Generate the key (press Enter for all prompts)
 ssh-keygen -t rsa -b 4096
 ```
+
 ```bash
-# 2. Copy the public key to this folder
+# 2. Then copy your public key into the project directory.
 cp ~/.ssh/id_rsa.pub.
 ```
-This builds the container, embedding your public key and granting it the necessary `NET_ADMIN` capability.
 
-**Step 3: Provision the Server with Ansible**
+_This builds the container, embedding your public key and granting it the necessary `NET_ADMIN` capability._
+
+---
+
+**Step 2: Build and Start the Target Server**
+
+The container is built with:
+* Your public SSH key
+* The necessary Docker capabilities (e.g., `NET_ADMIN` for UFW)
+
+Start it with:
+```bash
+docker-compose up -d
+```
+
+---
+
+**Step 3: Run Ansible to Configure the Server**
 
 This command executes the playbook, connecting via your SSH key.
 
 ```bash
 ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml
 ```
+---
 
-**Step 4: Verify the Result**
+**Step 4: Verify the Setup**
+
 Open your web browser and navigate to:
 `http://localhost:8080`
 
-You should see a welcome page that says "Server Configured by Ansible!"
+_You should see a welcome page that says "Server Configured by Ansible!"_
+
+---
 
 **Step 5: Clean Up**
 
 To stop and remove the container, run:
+
 ```bash
 docker-compose down
 ```
+---
+
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
