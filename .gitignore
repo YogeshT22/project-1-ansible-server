@@ -1,15 +1,59 @@
-# Ansible specific
+# ────────── Ansible ──────────
 *.retry
 *.log
 
-# Python virtual environment
-venv/
-*.pyc
+# If using encrypted variables or secrets
+vault.yml
+vault_pass.txt
+secrets.yml
+
+# Inventory artifacts (for dynamic/auto-generated inventory)
+inventory.dynamic
+hosts
+
+# ────────── SSH Keys (NEVER COMMIT) ──────────
+id_rsa
+id_rsa.pub
+*.pem
+
+# ────────── Python ──────────
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
 
-# Local environment files
-.env
+# ────────── Docker ──────────
+*.tar
+*.img
+*.pid
+*.sock
+*.gz
+*.tar.gz
+*.tar.bz2
 
-# System files
+# ────────── Editor & System Files ──────────
 .DS_Store
 Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ────────── Windows/WSL Artifacts ──────────
+*.lnk
+$RECYCLE.BIN/
+System Volume Information/
+
+# ────────── IDE/Editor Metadata ──────────
+.vscode/
+.idea/
+
+# ────────── Swap/Backup Files ──────────
+*.swp
+*.swo
+*.bak
+*.tmp
+*.old
+
+# ────────── Testing Frameworks (optional future) ──────────
+.molecule/
+testinfra/
