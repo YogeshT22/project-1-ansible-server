@@ -68,7 +68,7 @@ ssh-keygen -t rsa -b 4096
 
 ```bash
 # 2. Then copy your public key into the project directory.
-cp ~/.ssh/id_rsa.pub.
+cp ~/.ssh/id_rsa.pub .
 ```
 
 _This builds the container, embedding your public key and granting it the necessary `NET_ADMIN` capability._
@@ -113,6 +113,142 @@ To stop and remove the container, run:
 ```bash
 docker-compose down
 ```
+---
+
+### Troubleshooting
+
+❌ Ansible SSH Fails: Permission denied (publickey)
+
+_This means the SSH key used by Ansible doesn't match the one embedded in the container._
+
+#### Fix:
+
+Confirm your WSL public key:
+
+```bash
+cat ~/.ssh/id_rsa.pub
+```
+
+Copy it into the project folder:
+
+```bash
+cp ~/.ssh/id_rsa.pub .
+```
+
+Rebuild the container to re-embed the correct key:
+
+```bash
+docker-compose down
+docker-compose up --build -d
+```
+
+Manually test SSH:
+
+```bash
+ssh -i ~/.ssh/id_rsa ansible@127.0.0.1 -p 2222
+```
+---
+
+❌ ansible.cfg ignored: "world-writable directory" warning
+
+Ansible may show in commandline:
+
+_"Ansible is being run in a world writable directory ... ignoring it as an ansible.cfg source."_
+
+Why: You're running Ansible inside a `/mnt/d/...` folder from Windows, which WSL mounts as world-writable for compatibility.
+
+#### Fix (optional):
+
+> You can ignore this for personal use.
+
+Or, move the project into your WSL home directory (~/projects/...) for tighter control.
+
+---
+
+❌ Port 8080 not working in browser
+
+Ensure:
+The container is running:
+```bash
+docker ps
+```
+
+The Nginx service is active inside the container:
+
+```bash
+docker exec -it ansible-target-server systemctl status nginx
+```
+
+Or try:
+
+```bash
+docker exec -it ansible-target-server curl localhost
+```
+---
+
+❌ UFW Not Allowing Connections
+
+If UFW is blocking access:
+
+```bash
+docker exec -it ansible-target-server ufw status
+```
+
+Expected output:
+
+```vbnet
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         ALLOW       Anywhere
+80                         ALLOW       Anywhere
+443                        ALLOW       Anywhere
+If not, re-run your Ansible playbook or add UFW rules manually.
+```
+---
+
+❌ Cannot SSH into Container (manual test fails)
+Symptoms:
+
+```bash
+ssh -i ~/.ssh/id_rsa ansible@127.0.0.1 -p 2222
+```
+
+Fails with:
+
+Permission denied (publickey)
+
+#### Fix:
+
+* You forgot to copy your public key into the project directory
+* Or it's outdated (regenerated keys)
+
+Re-copy and rebuild the container as described above
+
+---
+
+### Clean Reset (when everything’s broken)
+
+To start fresh:
+
+```bash
+docker-compose down -v
+docker system prune -af
+```
+Then rebuild:
+```bash
+docker-compose up --build -d
+```
+---
+
+## 📌 Reminder
+
+> **This is a local-use setup — not intended for production-level internet exposure. If exposing externally, implement:**
+
+* Fail2Ban or SSH rate limiting
+* HTTPS (Let’s Encrypt)
+* Ansible Vault for any secrets
 ---
 
 ## License
