@@ -1,3 +1,8 @@
+# ---------------------
+# Docker Compose file for Ansible target server
+# This file sets up a personal server with Ansible
+# ---------------------
+
 version: "3.8"
 services:
   personal-server:
@@ -8,7 +13,7 @@ services:
     ports:
       - "2222:22"
       - "8080:80"
-    # This is the crucial fix: Grant the container permission
+    # Dev note: crucial fix: Grant the container permission
     # to administer the network stack.
     cap_add:
       - NET_ADMIN

@@ -1,3 +1,8 @@
+# ------------------------------
+# Purpose: Ansible playbook for configuring a personal web server
+# It uses the 'webserver' role to set up the web server.
+# This is a personal project for learning purposes.
+# ------------------------------
 ---
 - name: Configure Personal Web Server
   hosts: webservers

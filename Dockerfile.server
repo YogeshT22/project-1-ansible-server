@@ -1,42 +1,40 @@
-# Start from a standard Ubuntu LTS image
+# ------------------------------
+# Dockerfile for Ansible target server
+# Purpose: Set up a personal server with Ansible
+# this is personal project for learning purposes.
+# ------------------------------
+
+
 FROM ubuntu:20.04
 
-# Avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install SSH server, sudo, and Python
 RUN apt-get update && apt-get install -y openssh-server sudo python3
 
-# Ensure PubkeyAuthentication is enabled and PasswordAuthentication is disabled
+# Dev note: Ensure PubkeyAuthentication is enabled and PasswordAuthentication is disabled
+# Warning: Only for local development and testing purposes.
+
 RUN sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
   sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
   sed -i 's/#PasswordAuthentication no/PasswordAuthentication no/' /etc/ssh/sshd_config
 
-# --- START: THE BULLETPROOF USER AND KEY SETUP ---
-# Create the ansible user and add them to the sudo group in one go
+# '\' used to continue the command on the next line.
 RUN useradd -m -s /bin/bash ansible && \
   adduser ansible sudo && \
-  # Create the .ssh directory in the new user's home
   mkdir -p /home/ansible/.ssh && \
-  # Set the correct permissions on the .ssh directory
   chmod 700 /home/ansible/.ssh
 
-# Copy the public key into the .ssh directory
 COPY id_rsa.pub /home/ansible/.ssh/authorized_keys
 
-# Set the final, correct ownership and permissions for the entire home directory tree
 RUN chown -R ansible:ansible /home/ansible/ && \
   chmod 600 /home/ansible/.ssh/authorized_keys
-# --- END: THE BULLETPROOF USER AND KEY SETUP ---
 
-# Allow passwordless sudo for the sudo group
+# Warning: Allow passwordless sudo for the sudo group
 RUN echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Create the directory for the SSH daemon to run
 RUN mkdir /var/run/sshd
 
-# Expose the SSH port
+# Dev note: for local testing only!!!
 EXPOSE 22
 
-# Start the SSH daemon as the main command for the container
 CMD ["/usr/sbin/sshd", "-D"]
