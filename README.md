@@ -84,6 +84,7 @@ The container is built with:
 Start it with:
 
 ```bash
+docker compose build
 docker-compose up -d
 ```
 
@@ -119,6 +120,20 @@ docker-compose down
 
 ## Troubleshooting
 
+❌ If Causes **Port issues like this**:
+
+- Error response from daemon: ports are not available: exposing port TCP 0.0.0.0:2222 -> 127.0.0.1:0: listen tcp 0.0.0.0:2222: bind: An attempt was made to access a socket in a way forbidden by its access permissions.
+
+- RUN THIS BELOW COMMANDS TO FIX IT. (**_OPEN POWERSHELL AS ADMIN AND RUN "net stop" and "net start" commands, For "docker compose up -d" you can use WSL terminal :)_** )
+
+```bash
+net stop winnat
+docker compose up -d
+net start winnat
+```
+
+---
+
 ❌ Ansible SSH Fails: Permission denied (publickey)
 
 _This means the SSH key used by Ansible doesn't match the one embedded in the container._
@@ -151,6 +166,7 @@ ssh -i ~/.ssh/id_rsa ansible@127.0.0.1 -p 2222
 ```
 
 ---
+
 
 ❌ ansible.cfg ignored: "world-writable directory" warning
 
