@@ -4,6 +4,7 @@
   apt:
     update_cache: yes
     cache_valid_time: 3600 # Only update if cache is older than 1 hour
+
 - name: 2. Install common packages
   apt:
     name:
@@ -13,23 +14,15 @@
       - curl
       - cron
     state: present
-
+    
 - name: 3. Create a custom index.html page
-  copy:
-    content: |
-      <!DOCTYPE html>
-      <html>
-      <head><title>Welcome!</title></head>
-      <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-        <h1>Server Configured by Ansible!</h1>
-        <p>This server was automatically set up by an Ansible playbook.</p>
-        <p>The admin of this server is {{ server_admin_email }}.</p>
-      </body>
-      </html>
+  template:
+    src: index.html.j2
     dest: /var/www/html/index.html
     owner: www-data
     group: www-data
     mode: "0644"
+
 
 - name: 4. Configure Nginx from template
   template:
@@ -52,12 +45,12 @@
     - "22" # SSH
     - "80" # HTTP
     - "443" # HTTPS
-  notify: Restart UFW
 
 - name: 7. Enable the firewall
   ufw:
     state: enabled
     policy: deny # Deny all incoming traffic by default
+  when: ansible_virtualization_type != "docker" # 
 - name: 8. Set up daily security updates
   ansible.builtin.cron:
     name: "Daily unattended security upgrades"
