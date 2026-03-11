@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────────────────────
+# .gitattributes — enforce LF line endings for all text files
+#
+# WHY: YAML, shell scripts, and Jinja2 templates must use LF (\n).
+# CRLF (\r\n) causes yamllint "wrong new line character" errors
+# and breaks bash/sh scripts inside Linux CI runners and containers.
+# ──────────────────────────────────────────────────────────────
+
+# Default: normalise all text files to LF in the repo
+* text=auto eol=lf
+
+# Explicitly enforce LF for files that break with CRLF
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.j2        text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+*.sh        text eol=lf
+*.py        text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+Dockerfile* text eol=lf
+
+# Binary files — no line-ending conversion
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.key   binary
+*.pem   binary

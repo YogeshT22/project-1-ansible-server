@@ -1,3 +1,4 @@
+---
 # ──────────────────────────────────────────────────────────────────────────────
 # CI Pipeline – YAML Lint → Ansible Lint → Molecule Tests
 #
@@ -11,6 +12,7 @@
 
 name: CI
 
+# yamllint disable-line rule:truthy
 on:
   push:
     branches: [main]
