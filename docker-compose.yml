@@ -3,7 +3,7 @@
 # This file sets up a personal server with Ansible
 # ---------------------
 
-version: "3.8"
+# Note: 'version' key is obsolete in Docker Compose v2+ and is intentionally omitted.
 services:
   personal-server:
     container_name: ansible-target-server
@@ -11,9 +11,17 @@ services:
       context: .
       dockerfile: Dockerfile.server
     ports:
-      - "2222:22"
-      - "8080:80"
-    # Dev note: crucial fix: Grant the container permission
-    # to administer the network stack.
+      - "2222:22" # SSH – Ansible connects here
+      - "8080:80" # HTTP – browse the configured site
+    # Required so UFW can manage iptables rules inside the container.
     cap_add:
       - NET_ADMIN
+    # Restart policy mirrors production behaviour (systemd equivalent).
+    restart: unless-stopped
+    # Health check: verify sshd is accepting connections every 30 s.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/22"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

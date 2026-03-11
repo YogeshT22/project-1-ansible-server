@@ -1,4 +1,16 @@
 ---
-# vars file for roles/webserver
-# We can define variables here for use in the playbook
-server_admin_email: "admin@example.com"
+# vars/main.yml
+# ─────────────────────────────────────────────────────────────
+# HIGH-PRIORITY role-internal constants.
+# These are NOT meant to be overridden from outside the role.
+# Put user-facing knobs in defaults/main.yml instead.
+# ─────────────────────────────────────────────────────────────
+
+# Packages installed on every managed host
+webserver_packages:
+  - nginx
+  - ufw
+  - htop
+  - curl
+  - cron
+  - fail2ban # brute-force SSH/HTTP protection

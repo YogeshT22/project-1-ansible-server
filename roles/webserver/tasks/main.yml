@@ -1,60 +1,90 @@
 ---
-# tasks file for roles/webserver
-- name: 1. Update APT package cache
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600 # Only update if cache is older than 1 hour
+# tasks/main.yml
+# Tags let you run a subset of the playbook, e.g.:
+#   ansible-playbook playbook.yml --tags nginx
+#   ansible-playbook playbook.yml --tags security
 
-- name: 2. Install common packages
-  apt:
-    name:
-      - nginx
-      - ufw # Uncomplicated Firewall
-      - htop # A better 'top' for process monitoring
-      - curl
-      - cron
+# ── Package management ──────────────────────────────────────
+- name: 1. Update APT package cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: [packages]
+
+- name: 2. Install required packages
+  ansible.builtin.apt:
+    name: "{{ webserver_packages }}" # defined in vars/main.yml
     state: present
-    
-- name: 3. Create a custom index.html page
-  template:
+  tags: [packages]
+
+# ── Nginx ────────────────────────────────────────────────────
+- name: 3. Deploy Nginx configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "/usr/sbin/nginx -t -c %s" # validate before applying
+  notify: Reload Nginx
+  tags: [nginx]
+
+- name: 4. Deploy index.html
+  ansible.builtin.template:
     src: index.html.j2
     dest: /var/www/html/index.html
     owner: www-data
     group: www-data
     mode: "0644"
+  tags: [nginx]
 
-
-- name: 4. Configure Nginx from template
-  template:
-    src: nginx.conf.j2
-    dest: /etc/nginx/nginx.conf
-  notify: Restart Nginx # This will trigger the 'Restart Nginx' handler if the file changes
-
-- name: 5. Ensure Nginx service is started and enabled
-  service:
+- name: 5. Ensure Nginx is started and enabled
+  ansible.builtin.service:
     name: nginx
     state: started
     enabled: yes
+  tags: [nginx]
 
-- name: 6. Configure Firewall (UFW)
-  ufw:
+# ── Firewall (UFW) ───────────────────────────────────────────
+- name: 6. Allow required ports through UFW
+  community.general.ufw:
     rule: allow
     port: "{{ item }}"
     proto: tcp
-  loop:
-    - "22" # SSH
-    - "80" # HTTP
-    - "443" # HTTPS
+  loop: "{{ ufw_allowed_ports }}" # defined in defaults/main.yml
+  tags: [security, firewall]
 
-- name: 7. Enable the firewall
-  ufw:
+- name: 7. Enable UFW (deny-by-default policy)
+  community.general.ufw:
     state: enabled
-    policy: deny # Deny all incoming traffic by default
-  when: ansible_virtualization_type != "docker" # 
-- name: 8. Set up daily security updates
+    policy: deny
+  # UFW manipulates iptables which is not available in a standard Docker
+  # network namespace; skip this task when running inside Docker.
+  when: ansible_virtualization_type != "docker"
+  tags: [security, firewall]
+
+# ── fail2ban ─────────────────────────────────────────────────
+- name: 8. Ensure fail2ban is started and enabled
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: yes
+  # fail2ban requires real log files (e.g. /var/log/auth.log) which
+  # don't exist in a Docker container. Skip in Docker, runs fine on real servers.
+  when: ansible_virtualization_type != "docker"
+  tags: [security, fail2ban]
+
+# ── Automated security updates ───────────────────────────────
+- name: 9. Schedule daily unattended security upgrades (cron)
   ansible.builtin.cron:
     name: "Daily unattended security upgrades"
     weekday: "*"
-    hour: "2"
-    minute: "0"
-    job: "DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' dist-upgrade"
+    hour: "{{ security_update_hour }}"
+    minute: "{{ security_update_minute }}"
+    job: >-
+      DEBIAN_FRONTEND=noninteractive apt-get update &&
+      DEBIAN_FRONTEND=noninteractive apt-get -y
+      -o Dpkg::Options::='--force-confdef'
+      -o Dpkg::Options::='--force-confold'
+      dist-upgrade
+  tags: [security, updates]

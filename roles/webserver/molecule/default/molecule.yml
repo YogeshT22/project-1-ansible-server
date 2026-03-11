@@ -1,0 +1,68 @@
+# molecule.yml – Molecule test scenario configuration
+# ──────────────────────────────────────────────────────────────
+# Molecule spins up a fresh Docker container, runs the role
+# against it (converge.yml), then runs assertions (verify.yml).
+#
+# Run locally (inside WSL):
+#   cd roles/webserver
+#   molecule test
+#
+# Or run a single step:
+#   molecule converge   ← apply the role
+#   molecule verify     ← run assertions only
+#   molecule destroy    ← tear down the container
+# ──────────────────────────────────────────────────────────────
+---
+dependency:
+  name: galaxy
+  options:
+    ignore-errors: true
+
+driver:
+  name: docker
+
+platforms:
+  - name: webserver-test
+    # Plain Ubuntu image — Molecule connects via 'docker exec', not SSH.
+    # This avoids all WSL2 systemd/cgroup compatibility issues.
+    image: ubuntu:20.04
+    pre_build_image: true
+    # Keep the container alive so Molecule can exec into it
+    command: sleep infinity
+    # Install Python (required by Ansible modules) before converge runs
+    docker_host: unix:///var/run/docker.sock
+    # These capabilities let service management and sysctl work inside
+    # the container without a full systemd init
+    capabilities:
+      - SYS_ADMIN
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      roles_path: ../../../../roles
+      remote_tmp: /tmp/.ansible/tmp
+      pipelining: false
+  # Skip tags that require real kernel capabilities (iptables/systemd)
+  # not available in a plain Docker container on WSL2.
+  playbooks:
+    converge: converge.yml
+  options:
+    skip-tags: firewall,fail2ban
+  inventory:
+    host_vars:
+      webserver-test:
+        ansible_connection: docker
+        ansible_python_interpreter: /usr/bin/python3
+
+verifier:
+  name: ansible
+
+# Linting is handled by the dedicated ansible-lint CI job
+lint: |
+  set -e
+  yamllint .

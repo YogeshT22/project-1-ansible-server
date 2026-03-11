@@ -1,0 +1,13 @@
+---
+# converge.yml – applies the webserver role to the test container
+# Molecule calls this automatically during `molecule converge`.
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    server_name: "localhost"
+    server_admin_email: "test@example.com"
+
+  roles:
+    - role: webserver

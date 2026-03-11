@@ -1,8 +1,11 @@
 ---
-# handlers file for roles/webserver
-# Handlers are special tasks that only run when 'notified' by another task.
-# This is more efficient than restarting a service on every playbook run.
-- name: Restart Nginx
-  service:
+# handlers/main.yml
+# Handlers only run when notified by a task, and only once per play,
+# regardless of how many tasks triggered them.
+
+- name: Reload Nginx
+  # 'reload' (SIGHUP) is preferred over 'restart' in production –
+  # it re-reads the config with zero dropped connections.
+  ansible.builtin.service:
     name: nginx
-    state: restarted
+    state: reloaded

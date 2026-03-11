@@ -1,278 +1,331 @@
-# Project: Automated & Secure Server Provisioning with Ansible
+# Automated & Secure Server Provisioning with Ansible
 
-This project demonstrates a complete Infrastructure as Code (IaC) workflow for automatically provisioning a bare Ubuntu server into a fully configured and secured web server. It utilizes **Ansible** to perform configuration management, ensuring the process is repeatable, reliable, and idempotent.
+![CI](https://github.com/YogeshT22/project-1-ansible-server/actions/workflows/ci.yml/badge.svg)
+###
+![Ansible](https://img.shields.io/badge/ansible-2.17-blue) ![Docker](https://img.shields.io/badge/docker-compose-lightblue) ![Molecule](https://img.shields.io/badge/tested%20with-molecule-brightgreen) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-The project is structured using **Ansible Roles**, a best practice for creating modular and reusable automation code. It goes beyond basic setup to include key security hardening measures like **SSH key-only authentication** and **automated daily security updates**.
+###
+- A production-style Infrastructure as Code project that automatically provisions a bare Ubuntu server into a fully configured, hardened web server using **Ansible**. The entire setup — packages, Nginx config, firewall rules, kernel hardening, secrets, and automated tests — is defined in version-controlled YAML.
 
-A significant part of this project involved debugging real-world challenges, such as managing Docker container capabilities (`NET_ADMIN`) and resolving cross-platform issues between Windows, WSL, and Ansible.
 
----
+###
 
-![Ansible](https://img.shields.io/badge/ansible-automation-blue) ![Docker](https://img.shields.io/badge/docker-provisioning-lightblue) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![Logo](assets/logo.png)
 
-## Core Concepts & Skills Demonstrated
+###
 
-- **Configuration Management:** Used Ansible, an industry-standard tool, to manage the state of a server from code.
-- **Security Hardening:**
-  - Implemented **SSH key-only authentication**, disabling password-based logins for improved security.
-  - Configured the **UFW (Uncomplicated Firewall)** to deny all traffic by default and only allow specific ports.
-  - Set up a **cron job** for automatic, unattended daily security updates.
-  - Created a non-root user with passwordless `sudo` privileges for running administrative tasks.
-- **Idempotency:** The Ansible playbook is designed to be idempotent. It can be run repeatedly, but will only make changes if the server's configuration has drifted from the desired state.
-- **Ansible Roles:** The automation logic is encapsulated in a reusable `webserver` role, demonstrating best practices for scalable and maintainable Ansible projects.
-- **Infrastructure as Code (IaC):** The entire server setup is defined in version-controlled YAML files.
-- **Advanced Debugging:**
-  - Diagnosed and solved a container permission error by granting the `NET_ADMIN` capability to manage the firewall.
-  - Resolved SSH `Permission denied` errors by ensuring correct file permissions and ownership for SSH keys inside the container.
-  - Adapted the workflow for a WSL development environment, including managing dependencies (`sshpass`) and command-line flags.
+## What This Project Does
 
----
-
-## Technologies Used
-
-- **Configuration Management:** Ansible
-- **Containerization:** Docker, Docker Compose
-- **Development Environment:** WSL (Windows Subsystem for Linux)
-- **Operating System:** Ubuntu 20.04
-- **Web Server:** Nginx
-- **Firewall:** UFW
-- **System Tools:** SSH, Cron
-
----
-
-## How to Run This Project
-
-### Prerequisites
-
-- A Windows machine with **WSL2** installed and a Linux distribution (e.g., Ubuntu).
-- Docker Desktop installed on Windows, with the WSL2 integration enabled.
-- Ansible and `sshpass` installed **inside your WSL environment**:
+Running a single command:
 
 ```bash
-# Run these commands inside your WSL terminal
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
+ansible-playbook playbook.yml
+```
+###
+
+Takes a fresh Ubuntu server and:
+
+1. **Hardens the OS** — applies 10 sysctl kernel parameters (ASLR, SYN-flood protection, ICMP spoofing prevention), installs `auditd` for system-call auditing, deploys a login warning banner, locks down sensitive file permissions
+2. **Installs and configures Nginx** — deploys a hardened `nginx.conf` with 6 OWASP security headers, TLS 1.2/1.3 only, `server_tokens off`, gzip tuning, and hidden-file blocking
+3. **Configures the firewall** — UFW with deny-by-default policy, only ports 22/80/443 open
+4. **Installs fail2ban** — brute-force SSH/HTTP protection
+5. **Schedules daily security updates** — unattended `apt dist-upgrade` via cron at 02:00
+
+---
+
+## Skills & Concepts Demonstrated
+
+| Area                         | What's in this project                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------ |
+| **Configuration Management** | Ansible 2.17, two roles (`hardening` + `webserver`), idempotent tasks throughout           |
+| **Security Hardening**       | SSH key-only auth, explicit `sshd_config`, UFW, fail2ban, sysctl, auditd, OWASP headers    |
+| **Secrets Management**       | Ansible Vault (AES-256), `vault_` indirection pattern, `vault.yml.example` template        |
+| **Automated Testing**        | Molecule + Docker driver, `prepare → converge → verify`, 10 assertions                     |
+| **CI/CD**                    | GitHub Actions: `yamllint → ansible-lint → molecule` pipeline, free on public repos        |
+| **IaC Best Practices**       | Role `defaults` vs `vars`, variable priority, tags, handlers (`reload` not `restart`)      |
+| **Template Engine**          | Jinja2 templates for `nginx.conf` and `index.html`, variables injected at render time      |
+| **Docker**                   | Multi-layer Dockerfile, health checks, `restart: unless-stopped`, `docker exec` connection |
+
+---
+
+## Project Structure
+
+```text
+.
+├── ansible.cfg                  ← Pipelining, ControlMaster, diff, YAML output
+├── playbook.yml                 ← Entry point: hardening role → webserver role
+├── inventory.ini                ← Target hosts (Docker container on port 2222)
+├── requirements.yml             ← Galaxy collections: ansible.posix, community.general
+├── docker-compose.yml           ← Target server container (port 2222→22, 8080→80)
+├── Dockerfile.server            ← Ubuntu + sshd + ansible user + your public key
+├── sshd_config                  ← Hardened SSH config (PermitRootLogin no, key-only)
+├── .ansible-lint                ← profile: production
+├── .github/workflows/ci.yml     ← yamllint → ansible-lint → molecule
+├── group_vars/
+│   ├── webservers.yml           ← Non-secret group vars
+│   ├── vault.yml                ← Encrypted secrets (gitignored)
+│   └── vault.yml.example        ← Committed template showing vault structure
+└── roles/
+    ├── hardening/               ← OS hardening (sysctl, auditd, MOTD, file perms)
+    │   ├── defaults/main.yml    ← sysctl params dict, MOTD banner text
+    │   ├── tasks/main.yml       ← auditd, sysctl loop, banner, disable services, perms
+    │   ├── templates/motd.j2    ← Login warning banner
+    │   └── meta/main.yml        ← Galaxy metadata
+    └── webserver/               ← Application layer
+        ├── defaults/main.yml    ← server_name, ports, worker_connections, cron schedule
+        ├── vars/main.yml        ← Internal package list (high-priority)
+        ├── tasks/main.yml       ← apt, nginx, UFW, fail2ban, cron (all tagged)
+        ├── handlers/main.yml    ← Reload Nginx (SIGHUP — zero downtime)
+        ├── templates/
+        │   ├── nginx.conf.j2    ← Hardened Nginx: security headers, TLS, gzip
+        │   └── index.html.j2    ← Served web page
+        ├── meta/main.yml        ← Galaxy metadata
+        └── molecule/default/    ← Automated tests
+            ├── molecule.yml     ← Docker driver, roles_path, skip-tags
+            ├── prepare.yml      ← Bootstrap python3+sudo into container
+            ├── converge.yml     ← Apply webserver role
+            └── verify.yml       ← 10 assertions (Nginx, headers, packages, cron)
 ```
 
 ---
 
-#### Step 1: Generate and Prepare SSH Key
+## Prerequisites
 
-_If you don't have an SSH key in WSL, create one. Then, copy the public key into this project's directory._
+- **WSL2** on Windows with Ubuntu
+- **Docker Desktop** with WSL2 integration enabled
+- Run once inside WSL:
 
 ```bash
-# 1. Generate the key (press Enter for all prompts)
+# Upgrade Ansible (Ubuntu apt ships an outdated 2.10 — this project needs 2.12+)
+pip3 install --upgrade ansible
+echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# Install required Galaxy collections
+ansible-galaxy collection install -r requirements.yml
+
+# Install Molecule for testing
+pip3 install molecule molecule-plugins[docker]
+```
+###
+
+---
+
+## Quick Start
+
+### 1 — Generate your SSH key (first time only)
+
+```bash
 ssh-keygen -t rsa -b 4096
-```
-
-```bash
-# 2. Then copy your public key into the project directory.
 cp ~/.ssh/id_rsa.pub .
 ```
+###
 
-_This builds the container, embedding your public key and granting it the necessary `NET_ADMIN` capability._
-
----
-
-#### Step 2: Build and Start the Target Server
-
-The container is built with:
-
-- Your public SSH key
-- The necessary Docker capabilities (e.g., `NET_ADMIN` for UFW)
-
-Start it with:
+### 2 — Start the target server
 
 ```bash
-docker compose build
-docker-compose up -d
+docker-compose up -d --build
 ```
+###
 
----
-
-#### Step 3: Run Ansible to Configure the Server
-
-This command executes the playbook, connecting via your SSH key.
+Verify it's healthy:
 
 ```bash
-ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml
+docker ps   # STATUS should show "healthy" after ~15 seconds
 ```
+###
 
----
+### 3 — Set up Ansible Vault (optional for local dev)
 
-#### Step 4: Verify the Setup
+The playbook works out of the box with a plain `server_admin_email` in `group_vars/webservers.yml`.
+To use encrypted secrets instead:
 
-Open your web browser and navigate to:
-`http://localhost:8080`
-_You should see a welcome page that says "Server Configured by Ansible!"_
+```bash
+cp group_vars/vault.yml.example group_vars/vault.yml
+# Edit vault.yml with your real values, then encrypt it:
+ansible-vault encrypt group_vars/vault.yml
+# Run every playbook command with: --ask-vault-pass
+```
+###
 
----
+### 4 — Run the playbook
 
-#### Step 5: Clean Up
+> **WSL + Windows note:** `/mnt/d/` is world-writable, so Ansible ignores `ansible.cfg` there.
+> Do this **once** to fix it permanently:
+###
 
-To stop and remove the container, run:
+```bash
+cp ansible.cfg ~/ansible.cfg
+echo 'export ANSIBLE_CONFIG=~/ansible.cfg' >> ~/.bashrc && source ~/.bashrc
+```
+###
+
+```bash
+# Full run
+ansible-playbook playbook.yml
+
+# Dry-run — see exactly what would change without touching the server
+ansible-playbook playbook.yml --check --diff
+
+# Run only a specific layer
+ansible-playbook playbook.yml --tags hardening
+ansible-playbook playbook.yml --tags nginx
+ansible-playbook playbook.yml --tags security
+```
+###
+
+### 5 — Verify in browser
+
+Open **http://localhost:8080** — you should see the Ansible-configured welcome page.
+
+### 6 — Run automated tests (Molecule)
+
+```bash
+cd roles/webserver
+molecule test
+```
+###
+
+Or step by step:
+
+```bash
+molecule converge   # apply the role to a fresh container
+molecule verify     # run the 10 assertions
+molecule destroy    # tear down the test container
+```
+###
+
+### 7 — Clean up
 
 ```bash
 docker-compose down
 ```
+###
+
+---
+
+## Available Tags
+
+Run any subset of the playbook with `--tags`:
+
+| Tag         | What it runs                    |
+| ----------- | ------------------------------- |
+| `hardening` | Entire hardening role           |
+| `auditd`    | Install + enable auditd only    |
+| `sysctl`    | Kernel parameter hardening only |
+| `banner`    | MOTD + issue.net banner only    |
+| `webserver` | Entire webserver role           |
+| `packages`  | APT install tasks only          |
+| `nginx`     | Nginx config + service tasks    |
+| `security`  | UFW + fail2ban + cron tasks     |
+| `firewall`  | UFW rules only                  |
+| `fail2ban`  | fail2ban service only           |
+| `updates`   | Security update cron job only   |
 
 ---
 
 ## Troubleshooting
 
-❌ If Causes **Port issues like this**:
-
-- Error response from daemon: ports are not available: exposing port TCP 0.0.0.0:2222 -> 127.0.0.1:0: listen tcp 0.0.0.0:2222: bind: An attempt was made to access a socket in a way forbidden by its access permissions.
-
-- RUN THIS BELOW COMMANDS TO FIX IT. (**_OPEN POWERSHELL AS ADMIN AND RUN "net stop" and "net start" commands, For "docker compose up -d" you can use WSL terminal :)_** )
+### ❌ Port 2222 bind error on Windows
 
 ```bash
+Error: An attempt was made to access a socket in a way forbidden by its access permissions
+```
+###
+Open **PowerShell as Administrator**:
+
+```powershell
 net stop winnat
-docker compose up -d
+```
+###
+Then in WSL:
+
+```bash
+docker-compose up -d
+```
+###
+Then back in PowerShell:
+
+```powershell
 net start winnat
 ```
-
+###
 ---
 
-❌ Ansible SSH Fails: Permission denied (publickey)
+### ❌ SSH Permission denied (publickey)
 
-_This means the SSH key used by Ansible doesn't match the one embedded in the container._
-
-### Fix:
-
-Confirm your WSL public key:
-
-```bash
-cat ~/.ssh/id_rsa.pub
-```
-
-Copy it into the project folder:
+Your container was built with a different key than the one in `~/.ssh/id_rsa.pub`.
 
 ```bash
 cp ~/.ssh/id_rsa.pub .
-```
-
-Rebuild the container to re-embed the correct key:
-
-```bash
 docker-compose down
-docker-compose up --build -d
+docker-compose up -d --build
 ```
-
-Manually test SSH:
+###
+Manually test SSH to confirm:
 
 ```bash
 ssh -i ~/.ssh/id_rsa ansible@127.0.0.1 -p 2222
 ```
+###
+---
+
+### ❌ ansible.cfg ignored / no inventory parsed
+
+```
+[WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
+[WARNING]: No inventory was parsed, only implicit localhost is available.
+```
+###
+WSL mounts Windows drives as `chmod 777`. Fix once and permanently:
+
+```bash
+cp ansible.cfg ~/ansible.cfg
+echo 'export ANSIBLE_CONFIG=~/ansible.cfg' >> ~/.bashrc
+source ~/.bashrc
+```
+###
+---
+
+### ❌ `ufw` or `ansible.posix.sysctl` module not found
+
+Ubuntu's `apt` ships Ansible 2.10 (from 2021). This project requires 2.12+:
+
+```bash
+pip3 install --upgrade ansible
+ansible-galaxy collection install -r requirements.yml
+```
+###
+---
+
+### ❌ Molecule: "Failed to create temporary directory"
+
+This is a WSL2 + SSH issue with the geerlingguy systemd image. This project already fixes it by using `ansible_connection: docker` (exec-based, no SSH) and `ubuntu:20.04` with `sleep infinity`. If you still see it, confirm you're inside `roles/webserver/` before running:
+
+```bash
+cd roles/webserver && molecule test
+```
+###
+---
+
+### ❌ Molecule: WARNING 1 missing files
+
+```
+WARNING  Molecule executed 1 scenario (1 missing files)
+```
+###
+This is harmless — it refers to the optional `cleanup.yml` playbook not being present. The scenario still passed.
 
 ---
 
-
-❌ ansible.cfg ignored: "world-writable directory" warning
-
-Ansible may show in commandline:
-_"Ansible is being run in a world writable directory ... ignoring it as an ansible.cfg source."_
-
-Why: You're running Ansible inside a `/mnt/d/...` folder from Windows, which WSL mounts as world-writable for compatibility.
-
-#### Fix (optional):
-
-> You can ignore this for personal use.
-
-Or, move the project into your WSL home directory (~/projects/...) for tighter control.
-
----
-
-❌ Port 8080 not working in browser
-
-Ensure:
-The container is running:
-
-```bash
-docker ps
-```
-
-The Nginx service is active inside the container:
-
-```bash
-docker exec -it ansible-target-server systemctl status nginx
-```
-
-Or try:
-
-```bash
-docker exec -it ansible-target-server curl localhost
-```
-
----
-
-❌ UFW Not Allowing Connections
-
-If UFW is blocking access:
-
-```bash
-docker exec -it ansible-target-server ufw status
-```
-
-Expected output:
-
-```vbnet
-Status: active
-
-To                         Action      From
---                         ------      ----
-22                         ALLOW       Anywhere
-80                         ALLOW       Anywhere
-443                        ALLOW       Anywhere
-If not, re-run your Ansible playbook or add UFW rules manually.
-```
-
----
-
-❌ Cannot SSH into Container (manual test fails)
-Symptoms:
-
-```bash
-ssh -i ~/.ssh/id_rsa ansible@127.0.0.1 -p 2222
-```
-
-Fails with:
-
-Permission denied (publickey)
-
-### Fix
-
-- You forgot to copy your public key into the project directory
-- Or it's outdated (regenerated keys)
-
-Re-copy and rebuild the container as described above
-
----
-
-### Clean Reset (when everything’s broken)
-
-To start fresh:
+### ❌ Clean reset (when everything is broken)
 
 ```bash
 docker-compose down -v
 docker system prune -af
+docker-compose up -d --build
 ```
-
-Then rebuild:
-
-```bash
-docker-compose up --build -d
-```
-
----
-
-## 📌 Reminder
-
-> **This is a local-use setup — not intended for production-level internet exposure. If exposing externally, implement:**
-
-- Fail2Ban or SSH rate limiting
-- HTTPS (Let’s Encrypt)
-- Ansible Vault for any secrets
+###
 
 ---
 

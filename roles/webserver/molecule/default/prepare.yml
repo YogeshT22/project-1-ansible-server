@@ -1,0 +1,14 @@
+---
+# prepare.yml – runs once before converge.yml
+# Bootstraps the bare Ubuntu container with the minimal packages
+# Ansible needs to operate: python3 and sudo.
+- name: Prepare
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Install python3 and sudo (required by Ansible modules)
+      ansible.builtin.raw: |
+        apt-get update -qq &&
+        apt-get install -y --no-install-recommends python3 sudo cron
+      changed_when: true

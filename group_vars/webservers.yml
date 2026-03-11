@@ -1,0 +1,10 @@
+---
+# group_vars/webservers.yml
+# ──────────────────────────────────────────────────────────────
+# Non-sensitive variables that apply to all hosts in [webservers].
+#
+# VAULT PATTERN (use when you encrypt group_vars/vault.yml):
+#   server_admin_email: "{{ vault_server_admin_email }}"
+#
+# PLAIN (default – safe for local dev, no vault password needed):
+server_admin_email: "admin@example.com"

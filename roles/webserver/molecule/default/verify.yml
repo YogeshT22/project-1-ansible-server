@@ -1,0 +1,98 @@
+---
+# verify.yml – assertions that prove the role did what it was supposed to.
+# Molecule calls this automatically during `molecule verify`.
+#
+# Think of this as your automated QA checklist. Each task is a test.
+# If any task fails, the whole test suite fails.
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    # ── Nginx ─────────────────────────────────────────────────
+    - name: "TEST | Nginx package is installed"
+      ansible.builtin.package:
+        name: nginx
+        state: present
+      check_mode: true
+      register: nginx_pkg
+      failed_when: nginx_pkg.changed
+
+    - name: "TEST | Nginx service is running"
+      ansible.builtin.service_facts:
+
+    - name: "TEST | Assert Nginx is active"
+      ansible.builtin.assert:
+        that:
+          - "'nginx' in services"
+          - "services['nginx'].state == 'running'"
+        fail_msg: "Nginx is NOT running – check the service"
+        success_msg: "✓ Nginx is running"
+
+    - name: "TEST | Nginx responds on port 80"
+      ansible.builtin.uri:
+        url: "http://localhost:80"
+        status_code: 200
+      register: http_response
+
+    - name: "TEST | index.html exists and is owned by www-data"
+      ansible.builtin.stat:
+        path: /var/www/html/index.html
+      register: index_stat
+
+    - name: "TEST | Assert index.html is in place"
+      ansible.builtin.assert:
+        that:
+          - index_stat.stat.exists
+          - index_stat.stat.pw_name == 'www-data'
+        fail_msg: "index.html missing or wrong owner"
+        success_msg: "✓ index.html exists with correct ownership"
+
+    - name: "TEST | nginx.conf is in place"
+      ansible.builtin.stat:
+        path: /etc/nginx/nginx.conf
+      register: nginx_conf_stat
+
+    - name: "TEST | Assert nginx.conf exists"
+      ansible.builtin.assert:
+        that: nginx_conf_stat.stat.exists
+        fail_msg: "nginx.conf is missing"
+        success_msg: "✓ nginx.conf deployed"
+
+    # ── Security headers ──────────────────────────────────────
+    - name: "TEST | X-Frame-Options header is present"
+      ansible.builtin.assert:
+        that: "'SAMEORIGIN' in http_response.x_frame_options | default('')"
+        fail_msg: "X-Frame-Options header missing from Nginx response"
+        success_msg: "✓ X-Frame-Options header present"
+
+    # ── Packages ──────────────────────────────────────────────
+    - name: "TEST | fail2ban is installed"
+      ansible.builtin.package:
+        name: fail2ban
+        state: present
+      check_mode: true
+      register: f2b_pkg
+      failed_when: f2b_pkg.changed
+
+    - name: "TEST | ufw is installed"
+      ansible.builtin.package:
+        name: ufw
+        state: present
+      check_mode: true
+      register: ufw_pkg
+      failed_when: ufw_pkg.changed
+
+    # ── Cron ──────────────────────────────────────────────────
+    - name: "TEST | Security update cron job exists"
+      ansible.builtin.shell: |
+        crontab -l -u root 2>/dev/null | grep -q 'unattended security upgrades'
+      changed_when: false
+      failed_when: false
+      register: cron_check
+
+    - name: "TEST | Assert cron job is scheduled"
+      ansible.builtin.assert:
+        that: cron_check.rc == 0
+        fail_msg: "Security update cron job not found"
+        success_msg: "✓ Daily security update cron is scheduled"

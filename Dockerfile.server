@@ -9,32 +9,37 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y openssh-server sudo python3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  openssh-server \
+  sudo \
+  python3 \
+  && rm -rf /var/lib/apt/lists/*
 
-# Dev note: Ensure PubkeyAuthentication is enabled and PasswordAuthentication is disabled
-# Warning: Only for local development and testing purposes.
+# ── SSH hardening: use a clean, explicit config instead of fragile sed patches ──
+COPY sshd_config /etc/ssh/sshd_config
+RUN chmod 600 /etc/ssh/sshd_config
 
-RUN sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
-  sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
-  sed -i 's/#PasswordAuthentication no/PasswordAuthentication no/' /etc/ssh/sshd_config
-
-# '\' used to continue the command on the next line.
-RUN useradd -m -s /bin/bash ansible && \
-  adduser ansible sudo && \
-  mkdir -p /home/ansible/.ssh && \
-  chmod 700 /home/ansible/.ssh
+# ── Create a non-root 'ansible' user with SSH access ──
+RUN useradd -m -s /bin/bash ansible \
+  && adduser ansible sudo \
+  && mkdir -p /home/ansible/.ssh \
+  && chmod 700 /home/ansible/.ssh
 
 COPY id_rsa.pub /home/ansible/.ssh/authorized_keys
 
-RUN chown -R ansible:ansible /home/ansible/ && \
-  chmod 600 /home/ansible/.ssh/authorized_keys
+RUN chown -R ansible:ansible /home/ansible/ \
+  && chmod 600 /home/ansible/.ssh/authorized_keys
 
-# Warning: Allow passwordless sudo for the sudo group
-RUN echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# ── Sudo: full access for Ansible in this local dev container ──
+# In production, scope this to specific commands.
+# Here we need full access because Ansible manages sysctl, auditd,
+# file permissions, services, and package installs.
+RUN echo "ansible ALL=(ALL) NOPASSWD: ALL" \
+  > /etc/sudoers.d/ansible \
+  && chmod 440 /etc/sudoers.d/ansible
 
 RUN mkdir /var/run/sshd
 
-# Dev note: for local testing only!!!
 EXPOSE 22
 
 CMD ["/usr/sbin/sshd", "-D"]

@@ -1,9 +1,9 @@
 ---
-# meta/main.yml – role metadata
+# hardening/meta/main.yml
 galaxy_info:
-  role_name: webserver
+  role_name: hardening
   author: "your-github-username"
-  description: "Provisions and hardens an Nginx web server on Ubuntu 20.04+"
+  description: "OS-level security hardening: sysctl, auditd, MOTD, file permissions"
   license: MIT
   min_ansible_version: "2.12"
 
@@ -14,10 +14,9 @@ galaxy_info:
         - jammy # 22.04
 
   galaxy_tags:
-    - nginx
-    - webserver
+    - hardening
     - security
-    - ufw
-    - fail2ban
+    - sysctl
+    - auditd
 
 dependencies: []

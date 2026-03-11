@@ -1,0 +1,96 @@
+---
+# hardening/tasks/main.yml
+# ──────────────────────────────────────────────────────────────
+# OS-level hardening, kept separate from the webserver role so
+# it can be applied to ANY server type (db, cache, etc.).
+# ──────────────────────────────────────────────────────────────
+
+# ── Packages ─────────────────────────────────────────────────
+- name: "hardening | Install auditd for system call auditing"
+  ansible.builtin.apt:
+    name:
+      - auditd # tracks privileged operations on the system
+      - audispd-plugins
+    state: present
+    update_cache: yes
+  tags: [hardening, auditd]
+
+- name: "hardening | Ensure auditd is started and enabled"
+  ansible.builtin.service:
+    name: auditd
+    state: started
+    enabled: yes
+  tags: [hardening, auditd]
+
+# ── Kernel hardening via sysctl ───────────────────────────────
+- name: "hardening | Apply sysctl security parameters"
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+    sysctl_file: /etc/sysctl.d/99-hardening.conf
+  loop: "{{ sysctl_hardening_params | dict2items }}"
+  # Skip kernel params that don't exist in Docker (no full kernel)
+  ignore_errors: "{{ ansible_virtualization_type == 'docker' }}"
+  tags: [hardening, sysctl]
+
+# ── Login banner (MOTD) ───────────────────────────────────────
+- name: "hardening | Deploy login warning banner (/etc/motd)"
+  ansible.builtin.template:
+    src: motd.j2
+    dest: /etc/motd
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [hardening, banner]
+
+- name: "hardening | Deploy SSH pre-login banner (/etc/issue.net)"
+  ansible.builtin.template:
+    src: motd.j2
+    dest: /etc/issue.net
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [hardening, banner]
+
+# ── Disable unused / risky services ──────────────────────────
+- name: "hardening | Disable unused services"
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - avahi-daemon # mDNS – not needed on a server
+    - cups # printing – not needed on a server
+  # Gracefully skip if service doesn't exist on this host
+  ignore_errors: true
+  tags: [hardening, services]
+
+# ── File permission hardening ─────────────────────────────────
+- name: "hardening | Ensure /etc/crontab exists"
+  ansible.builtin.file:
+    path: /etc/crontab
+    state: touch
+    owner: root
+    group: root
+    mode: "0600"
+    modification_time: preserve
+    access_time: preserve
+  tags: [hardening, permissions]
+
+- name: "hardening | Restrict /etc/passwd permissions"
+  ansible.builtin.file:
+    path: /etc/passwd
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [hardening, permissions]
+
+- name: "hardening | Restrict /etc/shadow permissions"
+  ansible.builtin.file:
+    path: /etc/shadow
+    owner: root
+    group: shadow
+    mode: "0640"
+  tags: [hardening, permissions]

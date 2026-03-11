@@ -6,15 +6,19 @@
 vault.yml
 vault_pass.txt
 secrets.yml
+.env
 
 # Inventory artifacts (for dynamic/auto-generated inventory)
 inventory.dynamic
 hosts
 
-# ────────── SSH Keys (NEVER COMMIT) ──────────
+# ────────── SSH Keys ──────────
+# NEVER commit private keys. Public keys are low-risk but excluded
+# as a habit – regenerate from the actual key when needed.
 id_rsa
 id_rsa.pub
 *.pem
+*.key
 
 # ────────── Python ──────────
 __pycache__/
@@ -57,3 +61,6 @@ System Volume Information/
 # ────────── Testing Frameworks (optional future) ──────────
 .molecule/
 testinfra/
+
+# Molecule role symlink (created by: ln -sfn ../../../.. roles/webserver/molecule/default/roles)
+roles/webserver/molecule/default/roles

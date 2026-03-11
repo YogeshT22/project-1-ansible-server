@@ -1,0 +1,20 @@
+# .ansible-lint
+# ──────────────────────────────────────────────────────────────
+# Ansible-lint configuration
+# Docs: https://ansible.readthedocs.io/projects/lint/
+# ──────────────────────────────────────────────────────────────
+
+profile: production   # strictest built-in profile
+
+# Paths to exclude from linting
+exclude_paths:
+  - roles/webserver/tests/   # scaffold test file, not a real playbook
+  - .github/
+
+# Warn instead of fail on these rule IDs (useful while learning)
+warn_list:
+  - experimental         # rules that are still being stabilised
+  - yaml[line-length]    # already handled by yamllint
+
+# These are intentional and not mistakes
+skip_list: []

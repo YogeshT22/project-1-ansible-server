@@ -1,0 +1,3 @@
+---
+# hardening/handlers/main.yml
+# (No handlers needed currently — sysctl reloads inline via the module)

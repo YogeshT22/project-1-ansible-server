@@ -1,11 +1,20 @@
-# ------------------------------
-# Purpose: Ansible playbook for configuring a personal web server
-# It uses the 'webserver' role to set up the web server.
-# This is a personal project for learning purposes.
-# ------------------------------
+# ──────────────────────────────────────────────────────────────
+# playbook.yml – Automated & Secure Web Server Provisioning
+#
+# Usage:
+#   Full run:              ansible-playbook playbook.yml --ask-vault-pass
+#   Dry-run (no changes):  ansible-playbook playbook.yml --check --diff --ask-vault-pass
+#   Specific tags:         ansible-playbook playbook.yml --tags nginx --ask-vault-pass
+#                          ansible-playbook playbook.yml --tags hardening --ask-vault-pass
+#   With vault file:       ansible-playbook playbook.yml --vault-password-file .vault_pass
+# ──────────────────────────────────────────────────────────────
 ---
 - name: Configure Personal Web Server
   hosts: webservers
   become: true
+  # group_vars/webservers.yml + group_vars/vault.yml are loaded automatically
   roles:
-    - webserver
+    - role: hardening # OS-level hardening first (sysctl, auditd, MOTD)
+      tags: [hardening]
+    - role: webserver # Application layer (Nginx, UFW, fail2ban)
+      tags: [webserver]

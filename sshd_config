@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────
+# sshd_config – hardened SSH daemon configuration
+# Managed by: Dockerfile.server  (local dev / learning env)
+# Production mirror: this file reflects real-world hardening.
+# ─────────────────────────────────────────────────────────
+
+Port 22
+AddressFamily inet
+
+# ── Authentication ──────────────────────────────────────
+PermitRootLogin no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+
+# ── Session hardening ────────────────────────────────────
+# Disconnect idle sessions after 10 minutes (2 × 5-min intervals)
+ClientAliveInterval 300
+ClientAliveCountMax 2
+LoginGraceTime 30
+MaxAuthTries 3
+MaxSessions 5
+
+# ── Disable unused features ──────────────────────────────
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+PrintMotd no
+TCPKeepAlive yes
+
+# ── Allowed users ────────────────────────────────────────
+AllowUsers ansible
+
+# ── Logging ──────────────────────────────────────────────
+SyslogFacility AUTH
+LogLevel VERBOSE
+
+# ── Required for PAM / session management ────────────────
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
