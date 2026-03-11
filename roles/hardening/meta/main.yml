@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: hardening
+  namespace: yogesht22
   author: YogeshT22
   description: OS-level hardening - sysctl, auditd, MOTD, file permissions
   license: MIT

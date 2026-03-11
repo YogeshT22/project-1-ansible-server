@@ -47,12 +47,14 @@ provisioner:
       roles_path: ../../../../roles
       remote_tmp: /tmp/.ansible/tmp
       pipelining: false
-  # Skip tags that require real kernel capabilities (iptables/systemd)
-  # not available in a plain Docker container on WSL2.
-  playbooks:
-    converge: converge.yml
+  env:
+    ANSIBLE_ROLES_PATH: ../../../../roles
+  # role_name_check=0 disables the Galaxy namespace validation during prerun
+  # (our namespace is 'yogesht22' in meta/main.yml — valid, but ansible-compat
+  # still errors on uppercase in the author field when namespace is absent)
   options:
     skip-tags: firewall,fail2ban
+    role-name-check: "0"
   inventory:
     host_vars:
       webserver-test:

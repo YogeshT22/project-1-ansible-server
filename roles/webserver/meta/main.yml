@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: webserver
+  namespace: yogesht22
   author: YogeshT22
   description: Install and configure a hardened Nginx web server
   license: MIT
