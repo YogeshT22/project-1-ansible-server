@@ -1,6 +1,6 @@
 ---
 # hardening/defaults/main.yml
-sysctl_hardening_params:
+hardening_sysctl_params:
   kernel.randomize_va_space: "2"
   fs.suid_dumpable: "0"
   net.ipv4.tcp_syncookies: "1"

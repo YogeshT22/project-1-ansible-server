@@ -26,7 +26,7 @@
     state: present
     reload: true
     sysctl_file: /etc/sysctl.d/99-hardening.conf
-  loop: "{{ sysctl_hardening_params | dict2items }}"
+  loop: "{{ hardening_sysctl_params | dict2items }}"
   register: sysctl_result
   failed_when:
     - sysctl_result is failed
