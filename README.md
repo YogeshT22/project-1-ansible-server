@@ -150,10 +150,13 @@ ansible-vault encrypt group_vars/vault.yml
 > [WARNING]: No inventory was parsed, only implicit localhost is available.
 > ```
 
-Fix it permanently by pointing `ANSIBLE_CONFIG` at the project file:
+Add these lines to `~/.bashrc` once — then it just works:
 
 ```bash
-echo 'export ANSIBLE_CONFIG=/mnt/d/New-courses-programming-2022/Z_Projects_2025/PROJECTS/3.Automated-Personal-Server-Setup-with-Configuration-Management/ansible.cfg' >> ~/.bashrc
+cat >> ~/.bashrc << 'EOF'
+export ANSIBLE_PROJECT="/mnt/d/New-courses-programming-2022/Z_Projects_2025/PROJECTS/3.Automated-Personal-Server-Setup-with-Configuration-Management"
+alias ansible-run='ANSIBLE_CONFIG="$ANSIBLE_PROJECT/ansible.cfg" ansible-playbook "$ANSIBLE_PROJECT/playbook.yml"'
+EOF
 source ~/.bashrc
 ```
 
@@ -167,7 +170,15 @@ ansible --version | grep "config file"
 ### 5 — Run the playbook
 
 ```bash
-# Full run
+# Full run — from anywhere, no cd needed
+ansible-run
+
+# With extra flags
+ansible-run --check --diff
+ansible-run --tags hardening
+ansible-run --tags nginx
+
+# Or the traditional way (must be inside the project dir):
 ansible-playbook playbook.yml
 
 # Dry-run — see exactly what would change without touching the server
@@ -235,13 +246,7 @@ Run any subset of the playbook with `--tags`:
 [WARNING]: No inventory was parsed, only implicit localhost is available.
 ```
 
-WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above.
-
-Quick check — confirm `config file` is not `None`:
-
-```bash
-ansible --version | grep "config file"
-```
+WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above — the `ansible-run` alias fixes this permanently.
 
 ---
 
