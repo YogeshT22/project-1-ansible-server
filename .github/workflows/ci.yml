@@ -51,13 +51,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install required Ansible collections
-        run: ansible-galaxy collection install -r requirements.yml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ansible-core and ansible-lint
+        run: |
+          pip install --upgrade pip
+          pip install "ansible-core>=2.15,<2.18" "ansible-lint>=24.2,<25"
+          ansible-galaxy collection install -r requirements.yml
 
       - name: Run ansible-lint
-        uses: ansible/ansible-lint@v24
-        with:
-          args: playbook.yml
+        run: ansible-lint playbook.yml
 
   # ── Job 3: Molecule integration tests ───────────────────────────────────────
   molecule:
