@@ -1,27 +1,9 @@
-# group_vars/vault.yml  ← TEMPLATE (unencrypted placeholder)
-# ──────────────────────────────────────────────────────────────
-# HOW TO USE:
-#
-# 1. Copy this file:
-#      cp group_vars/vault.yml.example group_vars/vault.yml
-#
-# 2. Fill in your real values below.
-#
-# 3. Encrypt it with Ansible Vault:
-#      ansible-vault encrypt group_vars/vault.yml
-#    You will be prompted to set a vault password.
-#
-# 4. To run the playbook with the vault:
-#      ansible-playbook playbook.yml --ask-vault-pass
-#    Or use a password file (do NOT commit the file!):
-#      echo "your-vault-password" > .vault_pass
-#      ansible-playbook playbook.yml --vault-password-file .vault_pass
-#
-# 5. To edit the encrypted file later:
-#      ansible-vault edit group_vars/vault.yml
-#
-# NOTE: vault.yml is in .gitignore — it will NEVER be committed.
-#       Only this example template is committed.
-# ──────────────────────────────────────────────────────────────
 ---
+# group_vars/vault.yml  <- TEMPLATE (unencrypted placeholder)
+# HOW TO USE:
+# 1. Copy: cp group_vars/vault.yml.example group_vars/vault.yml
+# 2. Fill in real values below.
+# 3. Encrypt: ansible-vault encrypt group_vars/vault.yml
+# 4. Run: ansible-playbook playbook.yml --ask-vault-pass
+# NOTE: vault.yml is in .gitignore - it will NEVER be committed.
 vault_server_admin_email: "your-real-email@example.com"

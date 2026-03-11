@@ -1,22 +1,14 @@
 ---
-# hardening/meta/main.yml
 galaxy_info:
   role_name: hardening
-  author: "your-github-username"
-  description: "OS-level security hardening: sysctl, auditd, MOTD, file permissions"
+  author: YogeshT22
+  description: OS-level hardening - sysctl, auditd, MOTD, file permissions
   license: MIT
   min_ansible_version: "2.12"
-
   platforms:
     - name: Ubuntu
       versions:
-        - focal # 20.04
-        - jammy # 22.04
-
-  galaxy_tags:
-    - hardening
-    - security
-    - sysctl
-    - auditd
-
+        - focal
+        - jammy
+  galaxy_tags: [hardening, security, sysctl, linux]
 dependencies: []

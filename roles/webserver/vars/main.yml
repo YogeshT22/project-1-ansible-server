@@ -1,16 +1,7 @@
 ---
-# vars/main.yml
-# ─────────────────────────────────────────────────────────────
-# HIGH-PRIORITY role-internal constants.
-# These are NOT meant to be overridden from outside the role.
-# Put user-facing knobs in defaults/main.yml instead.
-# ─────────────────────────────────────────────────────────────
-
-# Packages installed on every managed host
+# webserver/vars/main.yml
 webserver_packages:
   - nginx
   - ufw
-  - htop
-  - curl
+  - fail2ban
   - cron
-  - fail2ban # brute-force SSH/HTTP protection

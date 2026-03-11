@@ -1,25 +1,11 @@
 ---
-# defaults/main.yml
-# ─────────────────────────────────────────────────────────────
-# These are LOW-PRIORITY defaults. Override them in:
-#   - inventory host/group vars
-#   - playbook vars
-#   - the command line with -e
-# ─────────────────────────────────────────────────────────────
-
-# Site identity
-webserver_server_name: "_" # Nginx server_name; set to your domain in production
-webserver_admin_email: "admin@example.com" # Used in index.html and for alerting
-
-# Nginx tuning
-webserver_worker_connections: 1024 # Production standard (was 768)
-
-# Firewall – ports that UFW will open
+# webserver/defaults/main.yml
+webserver_server_name: "_"
+webserver_admin_email: "admin@example.com"
+webserver_worker_connections: 1024
 webserver_ufw_allowed_ports:
-  - "22" # SSH
-  - "80" # HTTP
-  - "443" # HTTPS
-
-# Security-update cron schedule (run at 02:00 every day)
+  - "22"
+  - "80"
+  - "443"
 webserver_security_update_hour: "2"
 webserver_security_update_minute: "0"

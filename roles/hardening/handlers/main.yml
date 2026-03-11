@@ -1,3 +1,5 @@
 ---
-# hardening/handlers/main.yml
-# (No handlers needed currently — sysctl reloads inline via the module)
+- name: Restart auditd
+  ansible.builtin.service:
+    name: auditd
+    state: restarted

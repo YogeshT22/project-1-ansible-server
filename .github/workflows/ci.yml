@@ -1,14 +1,5 @@
 ---
-# ──────────────────────────────────────────────────────────────────────────────
-# CI Pipeline – YAML Lint → Ansible Lint → Molecule Tests
-#
-# Runs automatically on every push and pull request to main.
-# FREE on all public GitHub repositories (unlimited minutes).
-#
-# Pipeline order:
-#   yamllint → ansible-lint → molecule
-# Each job only runs if the previous one passes.
-# ──────────────────────────────────────────────────────────────────────────────
+# CI Pipeline - YAML Lint -> Ansible Lint -> Molecule Tests
 
 name: CI
 
@@ -20,11 +11,9 @@ on:
     branches: [main]
 
 jobs:
-  # ── Job 1: Validate all YAML files are well-formed ──────────────────────────
   yamllint:
     name: YAML Lint
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,12 +32,10 @@ jobs:
               truthy:
                 allowed-values: ["true", "false", "yes", "no"]
 
-  # ── Job 2: Ansible best-practice checks ─────────────────────────────────────
   ansible-lint:
     name: Ansible Lint
     runs-on: ubuntu-latest
     needs: yamllint
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,12 +54,10 @@ jobs:
       - name: Run ansible-lint
         run: ansible-lint playbook.yml
 
-  # ── Job 3: Molecule integration tests ───────────────────────────────────────
   molecule:
-    name: Molecule Test (webserver role)
+    name: Molecule Test
     runs-on: ubuntu-latest
     needs: ansible-lint
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

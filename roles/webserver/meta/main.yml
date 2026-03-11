@@ -1,23 +1,14 @@
 ---
-# meta/main.yml – role metadata
 galaxy_info:
   role_name: webserver
-  author: "your-github-username"
-  description: "Provisions and hardens an Nginx web server on Ubuntu 20.04+"
+  author: YogeshT22
+  description: Install and configure a hardened Nginx web server
   license: MIT
   min_ansible_version: "2.12"
-
   platforms:
     - name: Ubuntu
       versions:
-        - focal # 20.04
-        - jammy # 22.04
-
-  galaxy_tags:
-    - nginx
-    - webserver
-    - security
-    - ufw
-    - fail2ban
-
+        - focal
+        - jammy
+  galaxy_tags: [nginx, webserver, security, linux]
 dependencies: []

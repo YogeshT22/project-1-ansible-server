@@ -1,10 +1,7 @@
 ---
-# tasks/main.yml
-# Tags let you run a subset of the playbook, e.g.:
-#   ansible-playbook playbook.yml --tags nginx
-#   ansible-playbook playbook.yml --tags security
+# webserver/tasks/main.yml
 
-# ── Package management ──────────────────────────────────────
+# -- Package management -------------------------------------------
 - name: 1. Update APT package cache
   ansible.builtin.apt:
     update_cache: true
@@ -13,11 +10,11 @@
 
 - name: 2. Install required packages
   ansible.builtin.apt:
-    name: "{{ webserver_packages }}" # defined in vars/main.yml
+    name: "{{ webserver_packages }}"
     state: present
   tags: [packages]
 
-# ── Nginx ────────────────────────────────────────────────────
+# -- Nginx --------------------------------------------------------
 - name: 3. Deploy Nginx configuration
   ansible.builtin.template:
     src: nginx.conf.j2
@@ -25,7 +22,7 @@
     owner: root
     group: root
     mode: "0644"
-    validate: "/usr/sbin/nginx -t -c %s" # validate before applying
+    validate: "/usr/sbin/nginx -t -c %s"
   notify: Reload Nginx
   tags: [nginx]
 
@@ -45,37 +42,33 @@
     enabled: true
   tags: [nginx]
 
-# ── Firewall (UFW) ───────────────────────────────────────────
+# -- Firewall (UFW) -----------------------------------------------
 - name: 6. Allow required ports through UFW
   community.general.ufw:
     rule: allow
     port: "{{ item }}"
     proto: tcp
-  loop: "{{ webserver_ufw_allowed_ports }}" # defined in defaults/main.yml
+  loop: "{{ webserver_ufw_allowed_ports }}"
   tags: [security, firewall]
 
-- name: 7. Enable UFW (deny-by-default policy)
+- name: 7. Enable UFW with deny-by-default policy
   community.general.ufw:
     state: enabled
     policy: deny
-  # UFW manipulates iptables which is not available in a standard Docker
-  # network namespace; skip this task when running inside Docker.
   when: ansible_virtualization_type != "docker"
   tags: [security, firewall]
 
-# ── fail2ban ─────────────────────────────────────────────────
+# -- fail2ban -----------------------------------------------------
 - name: 8. Ensure fail2ban is started and enabled
   ansible.builtin.service:
     name: fail2ban
     state: started
     enabled: true
-  # fail2ban requires real log files (e.g. /var/log/auth.log) which
-  # don't exist in a Docker container. Skip in Docker, runs fine on real servers.
   when: ansible_virtualization_type != "docker"
   tags: [security, fail2ban]
 
-# ── Automated security updates ───────────────────────────────
-- name: 9. Schedule daily unattended security upgrades (cron)
+# -- Automated security updates -----------------------------------
+- name: 9. Schedule daily unattended security upgrades
   ansible.builtin.cron:
     name: "Daily unattended security upgrades"
     weekday: "*"
@@ -84,7 +77,7 @@
     job: >-
       DEBIAN_FRONTEND=noninteractive apt-get update &&
       DEBIAN_FRONTEND=noninteractive apt-get -y
-      -o Dpkg::Options::='--force-confdef'
-      -o Dpkg::Options::='--force-confold'
+      -o Dpkg::Options::=--force-confdef
+      -o Dpkg::Options::=--force-confold
       dist-upgrade
   tags: [security, updates]
