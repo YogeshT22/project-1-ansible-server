@@ -1,18 +1,14 @@
 # Automated & Secure Server Provisioning with Ansible
 
 ![CI](https://github.com/YogeshT22/project-1-ansible-server/actions/workflows/ci.yml/badge.svg)
-###
+
 ![Ansible](https://img.shields.io/badge/ansible-2.17-blue) ![Docker](https://img.shields.io/badge/docker-compose-lightblue) ![Molecule](https://img.shields.io/badge/tested%20with-molecule-brightgreen) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-###
-- A production-style Infrastructure as Code project that automatically provisions a bare Ubuntu server into a fully configured, hardened web server using **Ansible**. The entire setup — packages, Nginx config, firewall rules, kernel hardening, secrets, and automated tests — is defined in version-controlled YAML.
-
-
-###
+A production-style Infrastructure as Code project that automatically provisions a bare Ubuntu server into a fully configured, hardened web server using **Ansible**. The entire setup — packages, Nginx config, firewall rules, kernel hardening, secrets, and automated tests — is defined in version-controlled YAML.
 
 ![Logo](assets/logo.png)
 
-###
+---
 
 ## What This Project Does
 
@@ -21,7 +17,6 @@ Running a single command:
 ```bash
 ansible-playbook playbook.yml
 ```
-###
 
 Takes a fresh Ubuntu server and:
 
@@ -93,7 +88,8 @@ Takes a fresh Ubuntu server and:
 
 - **WSL2** on Windows with Ubuntu
 - **Docker Desktop** with WSL2 integration enabled
-- Run once inside WSL:
+
+Run once inside WSL2:
 
 ```bash
 # Upgrade Ansible (Ubuntu apt ships an outdated 2.10 — this project needs 2.12+)
@@ -107,7 +103,6 @@ ansible-galaxy collection install -r requirements.yml
 # Install Molecule for testing
 pip3 install molecule molecule-plugins[docker]
 ```
-###
 
 ---
 
@@ -119,46 +114,57 @@ pip3 install molecule molecule-plugins[docker]
 ssh-keygen -t rsa -b 4096
 cp ~/.ssh/id_rsa.pub .
 ```
-###
 
 ### 2 — Start the target server
 
 ```bash
 docker-compose up -d --build
 ```
-###
 
 Verify it's healthy:
 
 ```bash
 docker ps   # STATUS should show "healthy" after ~15 seconds
 ```
-###
 
 ### 3 — Set up Ansible Vault (optional for local dev)
 
-The playbook works out of the box with a plain `server_admin_email` in `group_vars/webservers.yml`.
+The playbook works out of the box with a plain `webserver_admin_email` in `group_vars/webservers.yml`.
 To use encrypted secrets instead:
 
 ```bash
 cp group_vars/vault.yml.example group_vars/vault.yml
 # Edit vault.yml with your real values, then encrypt it:
 ansible-vault encrypt group_vars/vault.yml
-# Run every playbook command with: --ask-vault-pass
+# Add --ask-vault-pass to every ansible-playbook command
 ```
-###
 
-### 4 — Run the playbook
+### 4 — Fix WSL2 world-writable warning (one-time setup)
 
-> **WSL + Windows note:** `/mnt/d/` is world-writable, so Ansible ignores `ansible.cfg` there.
-> Do this **once** to fix it permanently:
-###
+> **Why this is needed:** WSL2 mounts Windows drives (`/mnt/d/`) as world-writable (`chmod 777`).
+> Ansible refuses to load `ansible.cfg` from world-writable directories as a security measure.
+> You'll see this warning if not fixed:
+>
+> ```
+> [WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
+> [WARNING]: No inventory was parsed, only implicit localhost is available.
+> ```
+
+Fix it permanently by pointing `ANSIBLE_CONFIG` at the project file:
 
 ```bash
-cp ansible.cfg ~/ansible.cfg
-echo 'export ANSIBLE_CONFIG=~/ansible.cfg' >> ~/.bashrc && source ~/.bashrc
+echo 'export ANSIBLE_CONFIG=/mnt/d/New-courses-programming-2022/Z_Projects_2025/PROJECTS/3.Automated-Personal-Server-Setup-with-Configuration-Management/ansible.cfg' >> ~/.bashrc
+source ~/.bashrc
 ```
-###
+
+Verify it worked:
+
+```bash
+ansible --version | grep "config file"
+# Should show the project path, not "None"
+```
+
+### 5 — Run the playbook
 
 ```bash
 # Full run
@@ -172,19 +178,17 @@ ansible-playbook playbook.yml --tags hardening
 ansible-playbook playbook.yml --tags nginx
 ansible-playbook playbook.yml --tags security
 ```
-###
 
-### 5 — Verify in browser
+### 6 — Verify in browser
 
 Open **http://localhost:8080** — you should see the Ansible-configured welcome page.
 
-### 6 — Run automated tests (Molecule)
+### 7 — Run automated tests (Molecule)
 
 ```bash
 cd roles/webserver
 molecule test
 ```
-###
 
 Or step by step:
 
@@ -193,14 +197,12 @@ molecule converge   # apply the role to a fresh container
 molecule verify     # run the 10 assertions
 molecule destroy    # tear down the test container
 ```
-###
 
-### 7 — Clean up
+### 8 — Clean up
 
 ```bash
 docker-compose down
 ```
-###
 
 ---
 
@@ -226,30 +228,39 @@ Run any subset of the playbook with `--tags`:
 
 ## Troubleshooting
 
-### ❌ Port 2222 bind error on Windows
+### ❌ ansible.cfg ignored / "no hosts matched"
+
+```
+[WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
+[WARNING]: No inventory was parsed, only implicit localhost is available.
+```
+
+WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above.
+
+Quick check — confirm `config file` is not `None`:
 
 ```bash
+ansible --version | grep "config file"
+```
+
+---
+
+### ❌ Port 2222 bind error on Windows
+
+```
 Error: An attempt was made to access a socket in a way forbidden by its access permissions
 ```
-###
+
 Open **PowerShell as Administrator**:
 
 ```powershell
 net stop winnat
-```
-###
-Then in WSL:
-
-```bash
-docker-compose up -d
-```
-###
-Then back in PowerShell:
-
-```powershell
+# then:
 net start winnat
 ```
-###
+
+Then re-run `docker-compose up -d`.
+
 ---
 
 ### ❌ SSH Permission denied (publickey)
@@ -261,30 +272,13 @@ cp ~/.ssh/id_rsa.pub .
 docker-compose down
 docker-compose up -d --build
 ```
-###
+
 Manually test SSH to confirm:
 
 ```bash
 ssh -i ~/.ssh/id_rsa ansible@127.0.0.1 -p 2222
 ```
-###
----
 
-### ❌ ansible.cfg ignored / no inventory parsed
-
-```
-[WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
-[WARNING]: No inventory was parsed, only implicit localhost is available.
-```
-###
-WSL mounts Windows drives as `chmod 777`. Fix once and permanently:
-
-```bash
-cp ansible.cfg ~/ansible.cfg
-echo 'export ANSIBLE_CONFIG=~/ansible.cfg' >> ~/.bashrc
-source ~/.bashrc
-```
-###
 ---
 
 ### ❌ `ufw` or `ansible.posix.sysctl` module not found
@@ -295,17 +289,17 @@ Ubuntu's `apt` ships Ansible 2.10 (from 2021). This project requires 2.12+:
 pip3 install --upgrade ansible
 ansible-galaxy collection install -r requirements.yml
 ```
-###
+
 ---
 
 ### ❌ Molecule: "Failed to create temporary directory"
 
-This is a WSL2 + SSH issue with the geerlingguy systemd image. This project already fixes it by using `ansible_connection: docker` (exec-based, no SSH) and `ubuntu:20.04` with `sleep infinity`. If you still see it, confirm you're inside `roles/webserver/` before running:
+Confirm you're inside `roles/webserver/` before running Molecule:
 
 ```bash
 cd roles/webserver && molecule test
 ```
-###
+
 ---
 
 ### ❌ Molecule: WARNING 1 missing files
@@ -313,8 +307,8 @@ cd roles/webserver && molecule test
 ```
 WARNING  Molecule executed 1 scenario (1 missing files)
 ```
-###
-This is harmless — it refers to the optional `cleanup.yml` playbook not being present. The scenario still passed.
+
+Harmless — refers to the optional `cleanup.yml` not being present. The scenario still passed.
 
 ---
 
@@ -325,7 +319,6 @@ docker-compose down -v
 docker system prune -af
 docker-compose up -d --build
 ```
-###
 
 ---
 
