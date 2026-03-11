@@ -6,37 +6,40 @@
 # ──────────────────────────────────────────────────────────────
 
 # ── Packages ─────────────────────────────────────────────────
-- name: "hardening | Install auditd for system call auditing"
+- name: Install auditd for system call auditing
   ansible.builtin.apt:
     name:
-      - auditd # tracks privileged operations on the system
+      - auditd
       - audispd-plugins
     state: present
-    update_cache: yes
+    update_cache: true
   tags: [hardening, auditd]
 
-- name: "hardening | Ensure auditd is started and enabled"
+- name: Ensure auditd is started and enabled
   ansible.builtin.service:
     name: auditd
     state: started
-    enabled: yes
+    enabled: true
   tags: [hardening, auditd]
 
 # ── Kernel hardening via sysctl ───────────────────────────────
-- name: "hardening | Apply sysctl security parameters"
+- name: Apply sysctl security parameters
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
     state: present
-    reload: yes
+    reload: true
     sysctl_file: /etc/sysctl.d/99-hardening.conf
   loop: "{{ sysctl_hardening_params | dict2items }}"
   # Skip kernel params that don't exist in Docker (no full kernel)
-  ignore_errors: "{{ ansible_virtualization_type == 'docker' }}"
+  failed_when:
+    - sysctl_result is failed
+    - ansible_virtualization_type != "docker"
+  register: sysctl_result
   tags: [hardening, sysctl]
 
 # ── Login banner (MOTD) ───────────────────────────────────────
-- name: "hardening | Deploy login warning banner (/etc/motd)"
+- name: Deploy login warning banner to /etc/motd
   ansible.builtin.template:
     src: motd.j2
     dest: /etc/motd
@@ -45,7 +48,7 @@
     mode: "0644"
   tags: [hardening, banner]
 
-- name: "hardening | Deploy SSH pre-login banner (/etc/issue.net)"
+- name: Deploy SSH pre-login banner to /etc/issue.net
   ansible.builtin.template:
     src: motd.j2
     dest: /etc/issue.net
@@ -55,20 +58,20 @@
   tags: [hardening, banner]
 
 # ── Disable unused / risky services ──────────────────────────
-- name: "hardening | Disable unused services"
+- name: Disable unused services (avahi-daemon, cups)
   ansible.builtin.service:
     name: "{{ item }}"
     state: stopped
-    enabled: no
+    enabled: false
   loop:
-    - avahi-daemon # mDNS – not needed on a server
-    - cups # printing – not needed on a server
+    - avahi-daemon
+    - cups
   # Gracefully skip if service doesn't exist on this host
-  ignore_errors: true
+  failed_when: false
   tags: [hardening, services]
 
 # ── File permission hardening ─────────────────────────────────
-- name: "hardening | Ensure /etc/crontab exists"
+- name: Ensure /etc/crontab exists
   ansible.builtin.file:
     path: /etc/crontab
     state: touch
@@ -79,7 +82,7 @@
     access_time: preserve
   tags: [hardening, permissions]
 
-- name: "hardening | Restrict /etc/passwd permissions"
+- name: Restrict /etc/passwd permissions
   ansible.builtin.file:
     path: /etc/passwd
     owner: root
@@ -87,7 +90,7 @@
     mode: "0644"
   tags: [hardening, permissions]
 
-- name: "hardening | Restrict /etc/shadow permissions"
+- name: Restrict /etc/shadow permissions
   ansible.builtin.file:
     path: /etc/shadow
     owner: root

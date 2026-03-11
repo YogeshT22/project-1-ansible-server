@@ -8,7 +8,7 @@ include /etc/nginx/modules-enabled/*.conf;
 
 events {
     # Production standard: handles 1024 simultaneous connections per worker.
-    worker_connections {{ nginx_worker_connections }};
+    worker_connections {{ webserver_worker_connections }};
     multi_accept on;
 }
 
@@ -51,7 +51,7 @@ http {
         root        /var/www/html;
         index       index.html index.htm;
 
-        server_name {{ server_name }};
+        server_name {{ webserver_server_name }};
 
         # ── Security headers (OWASP recommended) ─────────────
         add_header X-Frame-Options           "SAMEORIGIN"            always;

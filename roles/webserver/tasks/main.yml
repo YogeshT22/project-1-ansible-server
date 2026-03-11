@@ -7,7 +7,7 @@
 # ── Package management ──────────────────────────────────────
 - name: 1. Update APT package cache
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 3600
   tags: [packages]
 
@@ -42,7 +42,7 @@
   ansible.builtin.service:
     name: nginx
     state: started
-    enabled: yes
+    enabled: true
   tags: [nginx]
 
 # ── Firewall (UFW) ───────────────────────────────────────────
@@ -51,7 +51,7 @@
     rule: allow
     port: "{{ item }}"
     proto: tcp
-  loop: "{{ ufw_allowed_ports }}" # defined in defaults/main.yml
+  loop: "{{ webserver_ufw_allowed_ports }}" # defined in defaults/main.yml
   tags: [security, firewall]
 
 - name: 7. Enable UFW (deny-by-default policy)
@@ -68,7 +68,7 @@
   ansible.builtin.service:
     name: fail2ban
     state: started
-    enabled: yes
+    enabled: true
   # fail2ban requires real log files (e.g. /var/log/auth.log) which
   # don't exist in a Docker container. Skip in Docker, runs fine on real servers.
   when: ansible_virtualization_type != "docker"
@@ -79,8 +79,8 @@
   ansible.builtin.cron:
     name: "Daily unattended security upgrades"
     weekday: "*"
-    hour: "{{ security_update_hour }}"
-    minute: "{{ security_update_minute }}"
+    hour: "{{ webserver_security_update_hour }}"
+    minute: "{{ webserver_security_update_minute }}"
     job: >-
       DEBIAN_FRONTEND=noninteractive apt-get update &&
       DEBIAN_FRONTEND=noninteractive apt-get -y
