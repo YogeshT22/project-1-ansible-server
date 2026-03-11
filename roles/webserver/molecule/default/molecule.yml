@@ -51,10 +51,12 @@ provisioner:
     ANSIBLE_ROLES_PATH: ../../../../roles
   # role_name_check=0 disables the Galaxy namespace validation during prerun
   # (our namespace is 'yogesht22' in meta/main.yml — valid, but ansible-compat
-  # still errors on uppercase in the author field when namespace is absent)
-  options:
+  # still errors on uppercase in the author field when namespace is absent)  options:
     skip-tags: firewall,fail2ban
-    role-name-check: "0"
+  playbooks:
+    converge: converge.yml
+    prepare: prepare.yml
+    verify: verify.yml
   inventory:
     host_vars:
       webserver-test:
