@@ -154,7 +154,7 @@ Add these lines to `~/.bashrc` once — then it just works:
 
 ```bash
 cat >> ~/.bashrc << 'EOF'
-export ANSIBLE_PROJECT="/mnt/d/New-courses-programming-2022/Z_Projects_2025/PROJECTS/3.Automated-Personal-Server-Setup-with-Configuration-Management"
+export ANSIBLE_PROJECT="/mnt/path/to/your/project"
 alias ansible-run='ANSIBLE_CONFIG="$ANSIBLE_PROJECT/ansible.cfg" ansible-playbook "$ANSIBLE_PROJECT/playbook.yml"'
 EOF
 source ~/.bashrc
