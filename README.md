@@ -4,9 +4,7 @@
 
 ![Ansible](https://img.shields.io/badge/ansible-2.17-blue) ![Docker](https://img.shields.io/badge/docker-compose-lightblue) ![Molecule](https://img.shields.io/badge/tested%20with-molecule-brightgreen) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-A production-style Infrastructure as Code project that automatically provisions a bare Ubuntu server into a fully configured, hardened web server using **Ansible**. The entire setup — packages, Nginx config, firewall rules, kernel hardening, secrets, and automated tests — is defined in version-controlled YAML.
-
-![Logo](assets/logo.png)
+A production-style Infrastructure as Code project that automatically provisions a bare Ubuntu server into a fully configured, hardened web server using **Ansible**. The entire setup - packages, Nginx config, firewall rules, kernel hardening, secrets, and automated tests - is defined in version-controlled YAML.
 
 ---
 
@@ -17,14 +15,15 @@ Running a single command:
 ```bash
 ansible-playbook playbook.yml
 ```
+###
 
 Takes a fresh Ubuntu server and:
 
-1. **Hardens the OS** — applies 10 sysctl kernel parameters (ASLR, SYN-flood protection, ICMP spoofing prevention), installs `auditd` for system-call auditing, deploys a login warning banner, locks down sensitive file permissions
-2. **Installs and configures Nginx** — deploys a hardened `nginx.conf` with 6 OWASP security headers, TLS 1.2/1.3 only, `server_tokens off`, gzip tuning, and hidden-file blocking
-3. **Configures the firewall** — UFW with deny-by-default policy, only ports 22/80/443 open
-4. **Installs fail2ban** — brute-force SSH/HTTP protection
-5. **Schedules daily security updates** — unattended `apt dist-upgrade` via cron at 02:00
+1. **Hardens the OS** - applies 10 sysctl kernel parameters (ASLR, SYN-flood protection, ICMP spoofing prevention), installs `auditd` for system-call auditing, deploys a login warning banner, locks down sensitive file permissions
+2. **Installs and configures Nginx** - deploys a hardened `nginx.conf` with 6 OWASP security headers, TLS 1.2/1.3 only, `server_tokens off`, gzip tuning, and hidden-file blocking
+3. **Configures the firewall** - UFW with deny-by-default policy, only ports 22/80/443 open
+4. **Installs fail2ban** - brute-force SSH/HTTP protection
+5. **Schedules daily security updates** - unattended `apt dist-upgrade` via cron at 02:00
 
 ---
 
@@ -46,7 +45,6 @@ Takes a fresh Ubuntu server and:
 ## Project Structure
 
 ```text
-.
 ├── ansible.cfg                  ← Pipelining, ControlMaster, diff, YAML output
 ├── playbook.yml                 ← Entry point: hardening role → webserver role
 ├── inventory.ini                ← Target hosts (Docker container on port 2222)
@@ -70,7 +68,7 @@ Takes a fresh Ubuntu server and:
         ├── defaults/main.yml    ← server_name, ports, worker_connections, cron schedule
         ├── vars/main.yml        ← Internal package list (high-priority)
         ├── tasks/main.yml       ← apt, nginx, UFW, fail2ban, cron (all tagged)
-        ├── handlers/main.yml    ← Reload Nginx (SIGHUP — zero downtime)
+        ├── handlers/main.yml    ← Reload Nginx (SIGHUP - zero downtime)
         ├── templates/
         │   ├── nginx.conf.j2    ← Hardened Nginx: security headers, TLS, gzip
         │   └── index.html.j2    ← Served web page
@@ -92,7 +90,7 @@ Takes a fresh Ubuntu server and:
 Run once inside WSL2:
 
 ```bash
-# Upgrade Ansible (Ubuntu apt ships an outdated 2.10 — this project needs 2.12+)
+# Upgrade Ansible (Ubuntu apt ships an outdated 2.10 - this project needs 2.12+)
 pip3 install --upgrade ansible
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
@@ -108,28 +106,29 @@ pip3 install molecule molecule-plugins[docker]
 
 ## Quick Start
 
-### 1 — Generate your SSH key (first time only)
+### 1 - Generate your SSH key (first time only)
 
 ```bash
 ssh-keygen -t rsa -b 4096
 cp ~/.ssh/id_rsa.pub .
 ```
 
-### 2 — Start the target server
+### 2 - Start the target server
 
 ```bash
 docker-compose up -d --build
 ```
-
+###
 Verify it's healthy:
-
+###
 ```bash
 docker ps   # STATUS should show "healthy" after ~15 seconds
 ```
 
-### 3 — Set up Ansible Vault (optional for local dev)
+### 3 - Set up Ansible Vault (optional for local dev)
 
 The playbook works out of the box with a plain `webserver_admin_email` in `group_vars/webservers.yml`.
+
 To use encrypted secrets instead:
 
 ```bash
@@ -139,7 +138,7 @@ ansible-vault encrypt group_vars/vault.yml
 # Add --ask-vault-pass to every ansible-playbook command
 ```
 
-### 4 — Fix WSL2 world-writable warning (one-time setup)
+### 4 - Fix WSL2 world-writable warning (one-time setup)
 
 > **Why this is needed:** WSL2 mounts Windows drives (`/mnt/d/`) as world-writable (`chmod 777`).
 > Ansible refuses to load `ansible.cfg` from world-writable directories as a security measure.
@@ -149,8 +148,8 @@ ansible-vault encrypt group_vars/vault.yml
 > [WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
 > [WARNING]: No inventory was parsed, only implicit localhost is available.
 > ```
-
-Add these lines to `~/.bashrc` once — then it just works:
+###
+Add these lines to `~/.bashrc` once - then it just works:
 
 ```bash
 cat >> ~/.bashrc << 'EOF'
@@ -159,7 +158,7 @@ alias ansible-run='ANSIBLE_CONFIG="$ANSIBLE_PROJECT/ansible.cfg" ansible-playboo
 EOF
 source ~/.bashrc
 ```
-
+###
 Verify it worked:
 
 ```bash
@@ -167,10 +166,10 @@ ansible --version | grep "config file"
 # Should show the project path, not "None"
 ```
 
-### 5 — Run the playbook
+### 5 - Run the playbook
 
 ```bash
-# Full run — from anywhere, no cd needed
+# Full run - from anywhere, no cd needed
 ansible-run
 
 # With extra flags
@@ -181,7 +180,7 @@ ansible-run --tags nginx
 # Or the traditional way (must be inside the project dir):
 ansible-playbook playbook.yml
 
-# Dry-run — see exactly what would change without touching the server
+# Dry-run - see exactly what would change without touching the server
 ansible-playbook playbook.yml --check --diff
 
 # Run only a specific layer
@@ -190,17 +189,17 @@ ansible-playbook playbook.yml --tags nginx
 ansible-playbook playbook.yml --tags security
 ```
 
-### 6 — Verify in browser
+### 6 - Verify in browser
 
-Open **http://localhost:8080** — you should see the Ansible-configured welcome page.
+Open **http://localhost:8080** - you should see the Ansible-configured welcome page.
 
-### 7 — Run automated tests (Molecule)
+### 7 - Run automated tests (Molecule)
 
 ```bash
 cd roles/webserver
 molecule test
 ```
-
+###
 Or step by step:
 
 ```bash
@@ -209,7 +208,7 @@ molecule verify     # run the 10 assertions
 molecule destroy    # tear down the test container
 ```
 
-### 8 — Clean up
+### 8 - Clean up
 
 ```bash
 docker-compose down
@@ -245,8 +244,8 @@ Run any subset of the playbook with `--tags`:
 [WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
 [WARNING]: No inventory was parsed, only implicit localhost is available.
 ```
-
-WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above — the `ansible-run` alias fixes this permanently.
+###
+WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above - the `ansible-run` alias fixes this permanently.
 
 ---
 
@@ -255,7 +254,7 @@ WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above �
 ```
 Error: An attempt was made to access a socket in a way forbidden by its access permissions
 ```
-
+###
 Open **PowerShell as Administrator**:
 
 ```powershell
@@ -263,7 +262,7 @@ net stop winnat
 # then:
 net start winnat
 ```
-
+###
 Then re-run `docker-compose up -d`.
 
 ---
@@ -313,7 +312,7 @@ cd roles/webserver && molecule test
 WARNING  Molecule executed 1 scenario (1 missing files)
 ```
 
-Harmless — refers to the optional `cleanup.yml` not being present. The scenario still passed.
+Harmless - refers to the optional `cleanup.yml` not being present. The scenario still passed.
 
 ---
 
