@@ -15,6 +15,7 @@ Running a single command:
 ```bash
 ansible-playbook playbook.yml
 ```
+
 ###
 
 Takes a fresh Ubuntu server and:
@@ -118,9 +119,13 @@ cp ~/.ssh/id_rsa.pub .
 ```bash
 docker-compose up -d --build
 ```
+
 ###
+
 Verify it's healthy:
+
 ###
+
 ```bash
 docker ps   # STATUS should show "healthy" after ~15 seconds
 ```
@@ -140,16 +145,21 @@ ansible-vault encrypt group_vars/vault.yml
 
 ### 4 - Fix WSL2 world-writable warning (one-time setup)
 
-> **Why this is needed:** WSL2 mounts Windows drives (`/mnt/d/`) as world-writable (`chmod 777`).
-> Ansible refuses to load `ansible.cfg` from world-writable directories as a security measure.
-> You'll see this warning if not fixed:
->
-> ```
-> [WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
-> [WARNING]: No inventory was parsed, only implicit localhost is available.
-> ```
+- **Why this is needed:** WSL2 mounts Windows drives (`/mnt/d/`) as world-writable (`chmod 777`).
+- Ansible refuses to load `ansible.cfg` from world-writable directories as a security measure.
+
+_You'll see this warning if not fixed:_
+
 ###
-Add these lines to `~/.bashrc` once - then it just works:
+
+```bash
+[WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
+[WARNING]: No inventory was parsed, only implicit localhost is available.
+```
+
+###
+
+_Add these lines shown below to `~/.bashrc` once edit accordingly:_
 
 ```bash
 cat >> ~/.bashrc << 'EOF'
@@ -158,8 +168,10 @@ alias ansible-run='ANSIBLE_CONFIG="$ANSIBLE_PROJECT/ansible.cfg" ansible-playboo
 EOF
 source ~/.bashrc
 ```
+
 ###
-Verify it worked:
+
+_Verify it worked:_
 
 ```bash
 ansible --version | grep "config file"
@@ -199,7 +211,9 @@ Open **http://localhost:8080** - you should see the Ansible-configured welcome p
 cd roles/webserver
 molecule test
 ```
+
 ###
+
 Or step by step:
 
 ```bash
@@ -244,7 +258,9 @@ Run any subset of the playbook with `--tags`:
 [WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
 [WARNING]: No inventory was parsed, only implicit localhost is available.
 ```
+
 ###
+
 WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above - the `ansible-run` alias fixes this permanently.
 
 ---
@@ -254,7 +270,9 @@ WSL2 mounts Windows drives as `chmod 777`. See **Step 4** in Quick Start above -
 ```
 Error: An attempt was made to access a socket in a way forbidden by its access permissions
 ```
+
 ###
+
 Open **PowerShell as Administrator**:
 
 ```powershell
@@ -262,7 +280,9 @@ net stop winnat
 # then:
 net start winnat
 ```
+
 ###
+
 Then re-run `docker-compose up -d`.
 
 ---
